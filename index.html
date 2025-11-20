@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EntechAssistant Report System</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; }
+        #root { min-height: 100vh; }
+        select { -webkit-appearance: none; appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 0.7rem center; background-size: 1.2em; padding-right: 2.5rem; }
+    </style>
+    <!-- Load the data file -->
+    <script src="data.js"></script>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+        
+        // Check if data is loaded
+        if (!window.entechData || window.entechData.length === 0) {
+            document.getElementById('root').innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: center; height: 100vh; background: #1a1a1a; color: white; text-align: center; padding: 20px;">
+                    <div>
+                        <h1 style="font-size: 2rem; margin-bottom: 1rem;">⚠️ Data Not Found</h1>
+                        <p style="margin-bottom: 1rem;">Please make sure data.js is in the same folder as this HTML file.</p>
+                        <p style="color: #888;">If you need to populate the data file, check the instructions in data.js</p>
+                    </div>
+                </div>
+            `;
+        } else {
+            // Data is loaded, run the app
+            const embeddedData = window.entechData;
+            
+            // Icon components
+            const ChevronLeft = ({className = "w-6 h-6"}) => (
+                <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+            );
+            
+            const ChevronRight = ({className = "w-6 h-6"}) => (
+                <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+            );
+            
+            const Home = ({className = "w-6 h-6"}) => (
+                <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+            );
+            
+            const Building = ({className = "w-6 h-6"}) => (
+                <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+            );
+            
+            const Search = ({className = "w-6 h-6"}) => (
+                <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+            );
+            
+            const Users = ({className = "w-6 h-6"}) => (
+                <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+            );
+            
+            const DollarSign = ({className = "w-6 h-6"}) => (
+                <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            );
+            
+            // Utility functions
+            const parseCurrency = (value) => {
+                if (!value || value === '$0.00') return 'n/a';
+                return value;
+            };
+            
+            const parseNumber = (value) => {
+                if (typeof value === 'string') {
+                    return parseFloat(value.replace(/[$,]/g, '')) || 0;
+                }
+                return value || 0;
+            };
+            
+            const formatCurrency = (value) => {
+                if (!value || value === '$0.00' || value === 0) return 'n/a';
+                if (typeof value === 'number') {
+                    return new Intl.NumberFormat('en-US', {
+                        style: 'currency',
+                        currency: 'USD',
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                    }).format(value);
+                }
+                return value;
+            };
+            
+            const groupBy = (array, key) => {
+                return array.reduce((result, item) => {
+                    const group = item[key];
+                    if (!result[group]) result[group] = [];
+                    result[group].push(item);
+                    return result;
+                }, {});
+            };
+            
+            // URL utility functions
+            const getManagementFromURL = () => {
+                const params = new URLSearchParams(window.location.search);
+                const management = params.get('management');
+                return management ? decodeURIComponent(management) : null;
+            };
+            
+            const setManagementInURL = (managementName) => {
+                const url = new URL(window.location);
+                if (managementName) {
+                    url.searchParams.set('management', encodeURIComponent(managementName));
+                } else {
+                    url.searchParams.delete('management');
+                }
+                window.history.pushState({}, '', url);
+            };
+            
+            const generateManagementLink = (managementName) => {
+                const url = new URL(window.location.href);
+                url.searchParams.set('management', encodeURIComponent(managementName));
+                return url.toString();
+            };
+            
+            // Debug function to test URL matching
+            const testManagementMatch = (managementName) => {
+                const encoded = encodeURIComponent(managementName);
+                const decoded = decodeURIComponent(encoded);
+                console.log('Original:', managementName);
+                console.log('Encoded:', encoded);
+                console.log('Decoded:', decoded);
+                console.log('Match:', managementName.toLowerCase().trim() === decoded.toLowerCase().trim());
+            };
+
+            // Main EntechReportSystem component
+            const EntechReportSystem = () => {
+                const [currentPage, setCurrentPage] = useState(0);
+                const [reportData, setReportData] = useState(null);
+                const [loading, setLoading] = useState(true);
+                const [allManagements, setAllManagements] = useState([]);
+                const [selectedManagement, setSelectedManagement] = useState(null);
+                const [searchTerm, setSearchTerm] = useState('');
+                const [showingReport, setShowingReport] = useState(false);
+                const [showingLinks, setShowingLinks] = useState(false);
+                
+                useEffect(() => {
+                    loadManagements();
+                    
+                    // Also check URL on initial load and browser back/forward
+                    const handleURLChange = () => {
+                        if (allManagements.length > 0) {
+                            const managementFromURL = getManagementFromURL();
+                            if (managementFromURL) {
+                                const management = allManagements.find(m => 
+                                    m.name.toLowerCase().trim() === managementFromURL.toLowerCase().trim()
+                                );
+                                if (management) {
+                                    generateReport(management);
+                                }
+                            }
+                        }
+                    };
+                    
+                    window.addEventListener('popstate', handleURLChange);
+                    return () => window.removeEventListener('popstate', handleURLChange);
+                }, []);
+                
+                useEffect(() => {
+                    const managementFromURL = getManagementFromURL();
+                    if (managementFromURL && allManagements.length > 0) {
+                        const management = allManagements.find(m => 
+                            m.name.toLowerCase().trim() === managementFromURL.toLowerCase().trim()
+                        );
+                        if (management) {
+                            generateReport(management);
+                        } else {
+                            console.log('Management not found:', managementFromURL);
+                            console.log('Available managements:', allManagements.map(m => m.name));
+                        }
+                    }
+                }, [allManagements]);
+                
+                const loadManagements = () => {
+                    try {
+                        const grouped = groupBy(embeddedData, 'Management');
+                        
+                        const managementSummaries = Object.entries(grouped).map(([management, buildings]) => {
+                            const totalSavings = buildings.reduce((sum, b) => sum + parseNumber(b.AmountSaved), 0);
+                            const totalDowntime = buildings.reduce((sum, b) => sum + parseInt(b.TotalDiscByp || 0), 0);
+                            const totalDowntimeCost = buildings.reduce((sum, b) => sum + parseNumber(b.TotalPotentialSaving), 0);
+                            
+                            return {
+                                name: management,
+                                buildingCount: buildings.length,
+                                totalSavings: totalSavings,
+                                totalDowntime: totalDowntime,
+                                totalDowntimeCost: totalDowntimeCost,
+                                buildings: buildings
+                            };
+                        }).sort((a, b) => a.name.localeCompare(b.name));
+                        
+                        setAllManagements(managementSummaries);
+                        setLoading(false);
+                    } catch (error) {
+                        console.error('Error loading data:', error);
+                        setLoading(false);
+                    }
+                };
+                
+                const generateReport = (management) => {
+                    const buildings = management.buildings;
+                    
+                    const portfolioTotals = {
+                        totalCurrentSavings: buildings.reduce((sum, b) => sum + parseNumber(b.AmountSaved), 0),
+                        totalLifetimeSavings: buildings.reduce((sum, b) => sum + parseNumber(b.TotalSavedFromEntechAllTime), 0),
+                        totalEntechAnnuals: buildings.reduce((sum, b) => sum + parseNumber(b.BasicFee), 0),
+                        totalDowntime: buildings.reduce((sum, b) => sum + parseInt(b.TotalDiscByp || 0), 0),
+                        totalDowntimeCost: buildings.reduce((sum, b) => sum + parseNumber(b.TotalPotentialSaving), 0),
+                        totalProFee: buildings.reduce((sum, b) => sum + parseNumber(b.ProFee), 0),
+                        totalBasicWithAssistant: buildings.reduce((sum, b) => sum + parseNumber(b.BasicWithAssistant), 0),
+                        totalAdditionalSavingsIfPro: buildings.reduce((sum, b) => sum + parseNumber(b.AdditionalAmountSaveIfPro), 0),
+                    };
+                    
+                    setReportData({
+                        management: management.name,
+                        buildings: buildings,
+                        portfolioTotals
+                    });
+                    setSelectedManagement(management);
+                    setShowingReport(true);
+                    setShowingLinks(false);
+                    setCurrentPage(0);
+                    setManagementInURL(management.name);
+                };
+                
+                const backToList = () => {
+                    setShowingReport(false);
+                    setSelectedManagement(null);
+                    setReportData(null);
+                    setShowingLinks(false);
+                    setCurrentPage(0);
+                    setManagementInURL(null);
+                };
+                
+                // Generate current page dynamically
+                const generateCurrentPage = useMemo(() => {
+                    if (!reportData) return null;
+                    
+                    const staticPages = [
+                        // Cover page
+                        <div key="cover" className="h-screen bg-gray-800 flex items-center justify-center p-8">
+                            <div className="bg-gray-700 rounded-3xl shadow-2xl p-12 max-w-5xl w-full flex">
+                                <div className="w-1/2 pr-8 flex items-center justify-center">
+                                    <div className="bg-gradient-to-br from-gray-600 to-gray-800 rounded-2xl w-full h-96 flex items-center justify-center">
+                                        <Building className="text-gray-500 w-32 h-32" />
+                                    </div>
+                                </div>
+                                <div className="w-1/2 flex flex-col justify-center">
+                                    <div className="flex items-center mb-6">
+                                        <div className="text-red-500 text-5xl mr-4">⚡</div>
+                                        <div>
+                                            <div className="text-3xl font-bold text-white">entech</div>
+                                            <div className="text-red-500 text-xl">| {reportData.management}</div>
+                                        </div>
+                                    </div>
+                                    <div className="text-gray-400 text-sm mb-4">{reportData.buildings.length} Buildings</div>
+                                    <div className="overflow-y-auto max-h-64 space-y-1">
+                                        {reportData.buildings.length > 10 ? (
+                                            <>
+                                                {reportData.buildings.slice(0, 5).map((building, idx) => (
+                                                    <div key={idx} className="text-gray-300 text-sm">• {building.Building}</div>
+                                                ))}
+                                                <div className="text-gray-400 text-sm italic py-1">... and {reportData.buildings.length - 5} more buildings</div>
+                                            </>
+                                        ) : (
+                                            reportData.buildings.map((building, idx) => (
+                                                <div key={idx} className="text-gray-300 text-sm">• {building.Building}</div>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>,
+                        
+                        // Problem page
+                        <div key="page1" className="h-screen bg-gray-800 flex">
+                            <div className="w-1/2 bg-gray-900 p-16 flex flex-col justify-center">
+                                <h1 className="text-6xl font-bold text-white leading-tight mb-8">
+                                    YOUR<br />
+                                    ENTECH<br />
+                                    INVESTMENT<br />
+                                    ISN'T<br />
+                                    DELIVERING<br />
+                                    <span className="text-red-500">ITS FULL<br />POTENTIAL.</span>
+                                </h1>
+                            </div>
+                            <div className="w-1/2 bg-gray-100 p-16 flex flex-col justify-center">
+                                <p className="text-gray-700 text-xl mb-8">
+                                    When you invested in Entech's energy management system, you expected consistent savings and improved building efficiency.
+                                </p>
+                                <p className="text-red-500 text-xl font-semibold">
+                                    But here's what's actually happening: →
+                                </p>
+                            </div>
+                        </div>,
+                        
+                        // Bottom line page
+                        <div key="page2" className="h-screen bg-gray-100 p-16">
+                            <div className="max-w-6xl mx-auto">
+                                <div className="grid grid-cols-2 gap-8 mb-16">
+                                    <div className="bg-white rounded-2xl p-8 shadow-lg">
+                                        <div className="text-red-500 text-4xl mb-4">📡</div>
+                                        <h3 className="text-red-500 text-2xl font-bold mb-4">System Downtime:</h3>
+                                        <p className="text-gray-700 text-lg">
+                                            Your Entech system frequently goes offline due to disconnections, server issues, or manual bypasses, meaning you're paying for savings you're not getting.
+                                        </p>
+                                    </div>
+                                    <div className="bg-white rounded-2xl p-8 shadow-lg">
+                                        <div className="text-red-500 text-4xl mb-4">👁️</div>
+                                        <h3 className="text-red-500 text-2xl font-bold mb-4">No Visibility:</h3>
+                                        <p className="text-gray-700 text-lg">
+                                            You don't know when these issues occur until it's too late, often discovering problems only when the energy bill arrives.
+                                        </p>
+                                    </div>
+                                    <div className="bg-white rounded-2xl p-8 shadow-lg">
+                                        <div className="text-red-500 text-4xl mb-4">↻</div>
+                                        <h3 className="text-red-500 text-2xl font-bold mb-4">Manual Overrides:</h3>
+                                        <p className="text-gray-700 text-lg">
+                                            When tenants complain about temperature, superintendents bypass Entech entirely and revert to manual controls, eliminating your energy savings for days or weeks at a time.
+                                        </p>
+                                    </div>
+                                    <div className="bg-white rounded-2xl p-8 shadow-lg">
+                                        <div className="text-red-500 text-4xl mb-4">💸</div>
+                                        <h3 className="text-red-500 text-2xl font-bold mb-4">Lost Savings:</h3>
+                                        <p className="text-gray-700 text-lg">
+                                            Every day your system is bypassed or disconnected, you're losing money. For many buildings, this adds up to thousands of dollars annually.
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="bg-gray-900 text-white p-8 rounded-2xl text-center">
+                                    <h2 className="text-3xl font-bold">
+                                        THE BOTTOM LINE:<br />
+                                        <span className="text-red-500">YOU'RE LEAVING MONEY ON THE TABLE EVERY SINGLE DAY.</span>
+                                    </h2>
+                                </div>
+                            </div>
+                        </div>,
+                        
+                        // Introducing EntechAssistant
+                        <div key="page3" className="h-screen bg-gray-100 flex items-center justify-center p-16">
+                            <div className="max-w-5xl text-center">
+                                <h1 className="text-6xl font-bold text-gray-800 mb-4">
+                                    INTRODUCING:
+                                </h1>
+                                <h2 className="text-6xl font-bold text-red-500 mb-8">
+                                    entechAssistant
+                                </h2>
+                                <p className="text-3xl text-gray-700 mb-16">
+                                    Your 24/7 Energy Savings Guardian
+                                </p>
+                                <p className="text-xl text-gray-700 mb-16">
+                                    EntechAssistant ensures your Entech system stays online and optimized, maximizing your investment through two critical services.
+                                </p>
+                                <div className="bg-gray-900 text-white p-6 rounded-2xl">
+                                    <p className="text-xl">
+                                        <span className="font-bold">RESULT:</span><br />
+                                        <span className="text-red-500">YOUR ENTECH SYSTEM OPERATES AT PEAK EFFICIENCY 365 DAYS A YEAR, DELIVERING THE SAVINGS YOU INVESTED IN.</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>,
+                        
+                        // Services page
+                        <div key="page4" className="h-screen bg-gray-800 p-16">
+                            <div className="max-w-6xl mx-auto h-full flex items-center">
+                                <div className="grid grid-cols-2 gap-12 w-full">
+                                    <div className="bg-white rounded-3xl p-12 shadow-2xl">
+                                        <div className="text-red-500 text-5xl mb-6">🎯</div>
+                                        <h3 className="text-red-500 text-3xl font-bold mb-6">
+                                            Intelligent Complaint Management
+                                        </h3>
+                                        <ul className="space-y-4 text-gray-700 text-lg">
+                                            <li>• Superintendents can text or call our automated assistant to log temperature complaints</li>
+                                            <li>• System automatically adjusts to address comfort issues while maintaining efficiency</li>
+                                            <li>• No more manual bypasses that waste thousands in energy costs</li>
+                                        </ul>
+                                    </div>
+                                    <div className="bg-white rounded-3xl p-12 shadow-2xl">
+                                        <div className="text-red-500 text-5xl mb-6">👨‍💼</div>
+                                        <h3 className="text-red-500 text-3xl font-bold mb-6">
+                                            Proactive System Monitoring & Support
+                                        </h3>
+                                        <ul className="space-y-4 text-gray-700 text-lg">
+                                            <li>• Real-time monitoring detects disconnections and bypasses instantly</li>
+                                            <li>• Immediate outreach via call, text, and email to your building staff</li>
+                                            <li>• Step-by-step guidance to restore connection</li>
+                                            <li>• We don't stop until your system is back online and saving you thousands in energy costs</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ];
+                    
+                    // Building pages
+                    const buildingStartIndex = 5;
+                    const buildingEndIndex = buildingStartIndex + reportData.buildings.length;
+                    
+                    if (currentPage >= buildingStartIndex && currentPage < buildingEndIndex) {
+                        const buildingIndex = currentPage - buildingStartIndex;
+                        const building = reportData.buildings[buildingIndex];
+                        
+                        return (
+                            <div key={`building-${buildingIndex}`} className="h-screen bg-gray-800 p-16 overflow-auto">
+                                <div className="max-w-6xl mx-auto">
+                                    <div className="flex items-center mb-8">
+                                        <Building className="text-gray-500 w-20 h-20 mr-6" />
+                                        <h2 className="text-5xl font-bold text-white">{building.Building}</h2>
+                                    </div>
+                                    
+                                    <div className="bg-gray-700 rounded-2xl p-6 mb-6">
+                                        <div className="grid grid-cols-2 gap-6">
+                                            <div>
+                                                <div className="text-gray-400 text-sm mb-2">2024-2025 ENERGY COST</div>
+                                                <div className="text-red-500 text-4xl font-bold">{parseCurrency(building.TotalAfterEntech)}</div>
+                                            </div>
+                                            <div>
+                                                <div className="text-gray-400 text-sm mb-2">PRE ENTECH ENERGY COST</div>
+                                                <div className="text-gray-300 text-4xl font-bold">{parseCurrency(building.TotalBeforeEntech)}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="bg-gray-700 rounded-2xl p-6 mb-6">
+                                        <div className="grid grid-cols-3 gap-6">
+                                            <div>
+                                                <div className="text-gray-400 text-sm mb-2">CURRENT ANNUALS</div>
+                                                <div className="text-white text-3xl font-bold">{parseCurrency(building.BasicFee)}</div>
+                                            </div>
+                                            <div>
+                                                <div className="text-gray-400 text-sm mb-2">CURRENT SAVINGS</div>
+                                                <div className="text-green-400 text-3xl font-bold">{parseCurrency(building.AmountSaved)}</div>
+                                            </div>
+                                            <div>
+                                                <div className="text-gray-400 text-sm mb-2">LIFETIME SAVINGS</div>
+                                                <div className="text-white text-3xl font-bold">{parseCurrency(building.TotalSavedFromEntechAllTime)}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="bg-red-900 bg-opacity-30 rounded-2xl p-6 mb-6">
+                                        <div className="grid grid-cols-2 gap-6">
+                                            <div>
+                                                <div className="text-red-400 text-sm mb-2">TOTAL DOWNTIME</div>
+                                                <div className="text-white text-3xl font-bold">{building.TotalDiscByp} days</div>
+                                            </div>
+                                            <div>
+                                                <div className="text-red-400 text-sm mb-2">DOWNTIME COST</div>
+                                                <div className="text-white text-3xl font-bold">{parseCurrency(building.TotalPotentialSaving)}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="bg-gray-700 rounded-2xl p-6">
+                                        <div className="grid grid-cols-3 gap-6">
+                                            <div>
+                                                <div className="text-gray-400 text-sm mb-2">NEW ENTECH ANNUALS</div>
+                                                <div className="text-white text-3xl font-bold">{parseCurrency(building.BasicWithAssistant)}</div>
+                                            </div>
+                                            <div>
+                                                <div className="text-gray-400 text-sm mb-2">ESTIMATED ADDITIONAL SAVINGS</div>
+                                                <div className="text-green-400 text-3xl font-bold">{parseCurrency(building.TotalPotentialSaving)}</div>
+                                            </div>
+                                            <div>
+                                                <div className="text-gray-400 text-sm mb-2">ESTIMATED ANNUAL SAVINGS</div>
+                                                <div className="text-green-400 text-3xl font-bold">
+                                                    {formatCurrency(parseNumber(building.AmountSaved) + parseNumber(building.TotalPotentialSaving))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    }
+                    
+                    // Management Summary
+                    const summaryPageIndex = buildingEndIndex;
+                    if (reportData.buildings.length > 1 && currentPage === summaryPageIndex) {
+                        return (
+                            <div key="summary" className="h-screen bg-gray-800 p-16 overflow-auto">
+                                <div className="max-w-6xl mx-auto">
+                                    <div className="bg-gray-700 rounded-3xl p-12 shadow-2xl">
+                                        <h2 className="text-5xl font-bold text-white mb-8">{reportData.management}</h2>
+                                        
+                                        <div className="bg-gray-600 rounded-2xl p-6 mb-6">
+                                            <div className="grid grid-cols-2 gap-6">
+                                                <div>
+                                                    <div className="text-gray-400 text-sm mb-2">2024 ENERGY COST</div>
+                                                    <div className="text-red-500 text-4xl font-bold">
+                                                        {formatCurrency(reportData.buildings.reduce((sum, b) => sum + parseNumber(b.TotalAfterEntech), 0))}
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <div className="text-gray-400 text-sm mb-2">PRE ENTECH ENERGY COST</div>
+                                                    <div className="text-gray-300 text-4xl font-bold">
+                                                        {formatCurrency(reportData.buildings.reduce((sum, b) => sum + parseNumber(b.TotalBeforeEntech), 0))}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="bg-gray-600 rounded-2xl p-6 mb-6">
+                                            <div className="grid grid-cols-3 gap-6">
+                                                <div>
+                                                    <div className="text-gray-400 text-sm mb-2">TOTAL ENTECH ANNUALS</div>
+                                                    <div className="text-white text-3xl font-bold">{formatCurrency(reportData.portfolioTotals.totalEntechAnnuals)}</div>
+                                                </div>
+                                                <div>
+                                                    <div className="text-gray-400 text-sm mb-2">TOTAL CURRENT SAVINGS</div>
+                                                    <div className="text-green-400 text-3xl font-bold">{formatCurrency(reportData.portfolioTotals.totalCurrentSavings)}</div>
+                                                </div>
+                                                <div>
+                                                    <div className="text-gray-400 text-sm mb-2">TOTAL LIFETIME SAVINGS</div>
+                                                    <div className="text-white text-3xl font-bold">{formatCurrency(reportData.portfolioTotals.totalLifetimeSavings)}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="bg-red-900 bg-opacity-30 rounded-2xl p-6 mb-6">
+                                            <div className="grid grid-cols-2 gap-6">
+                                                <div>
+                                                    <div className="text-red-400 text-sm mb-2">TOTAL DOWNTIME</div>
+                                                    <div className="text-white text-3xl font-bold">{reportData.portfolioTotals.totalDowntime} days</div>
+                                                </div>
+                                                <div>
+                                                    <div className="text-red-400 text-sm mb-2">TOTAL DOWNTIME COST</div>
+                                                    <div className="text-white text-3xl font-bold">{formatCurrency(reportData.portfolioTotals.totalDowntimeCost)}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="bg-gray-600 rounded-2xl p-6">
+                                            <div className="grid grid-cols-3 gap-6">
+                                                <div>
+                                                    <div className="text-gray-400 text-sm mb-2">NEW ENTECH ANNUALS</div>
+                                                    <div className="text-white text-3xl font-bold">{formatCurrency(reportData.portfolioTotals.totalBasicWithAssistant)}</div>
+                                                </div>
+                                                <div>
+                                                    <div className="text-gray-400 text-sm mb-2">ESTIMATED ADDITIONAL SAVINGS</div>
+                                                    <div className="text-green-400 text-3xl font-bold">{formatCurrency(reportData.portfolioTotals.totalDowntimeCost)}</div>
+                                                </div>
+                                                <div>
+                                                    <div className="text-gray-400 text-sm mb-2">ESTIMATED ANNUAL SAVINGS</div>
+                                                    <div className="text-green-400 text-3xl font-bold">
+                                                        {formatCurrency(reportData.portfolioTotals.totalCurrentSavings + reportData.portfolioTotals.totalDowntimeCost)}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    }
+                    
+                    // End pages
+                    const endPages = [
+                        // Entech Pro
+                        <div key="pro" className="h-screen bg-gray-800 flex">
+                            <div className="w-1/3 bg-gray-900 p-16 flex flex-col justify-center">
+                                <div className="bg-gray-800 rounded-2xl p-4 mb-8 inline-block w-fit">
+                                    <div className="text-white text-2xl">entech</div>
+                                    <div className="text-red-500 text-3xl font-bold">PRO</div>
+                                </div>
+                                <h2 className="text-5xl font-bold text-white mb-8">
+                                    YOUR<br />
+                                    BUILDINGS,<br />
+                                    <span className="text-red-500">EXPERTLY<br />
+                                    MANAGED<br />
+                                    24/7.</span>
+                                </h2>
+                                <p className="text-gray-400 text-lg">
+                                    Entech Pro assigns a dedicated team to actively manage your entire portfolio.
+                                </p>
+                            </div>
+                            <div className="w-2/3 bg-gray-100 p-16">
+                                <div className="grid grid-cols-2 gap-8">
+                                    <div className="space-y-8">
+                                        <div className="bg-white rounded-2xl p-8 shadow-lg">
+                                            <h3 className="text-red-500 text-xl font-bold mb-3">Round-the-clock monitoring</h3>
+                                            <p className="text-gray-700">We watch every building, every hour.</p>
+                                        </div>
+                                        <div className="bg-white rounded-2xl p-8 shadow-lg">
+                                            <h3 className="text-red-500 text-xl font-bold mb-3">Direct communication</h3>
+                                            <p className="text-gray-700">We work directly with your supers and staff</p>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-8">
+                                        <div className="bg-white rounded-2xl p-8 shadow-lg">
+                                            <h3 className="text-red-500 text-xl font-bold mb-3">Proactive intervention</h3>
+                                            <p className="text-gray-700">Fix problems before tenants notice</p>
+                                        </div>
+                                        <div className="bg-white rounded-2xl p-8 shadow-lg">
+                                            <h3 className="text-red-500 text-xl font-bold mb-3">Continuous optimization</h3>
+                                            <p className="text-gray-700">Real-time adjustments for maximum efficiency</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="mt-16 text-center">
+                                    <p className="text-lg text-gray-700">
+                                        The results: <span className="text-red-500 font-bold">Pro clients save an additional 10% on average—that's often $20,000+ extra savings in year one.</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>,
+                        
+                        // Investment
+                        <div key="investment" className="h-screen bg-gray-800 flex items-center justify-center p-16">
+                            <div className="max-w-4xl w-full">
+                                <h2 className="text-red-500 text-5xl font-bold mb-12 text-center">YOUR INVESTMENT</h2>
+                                <div className="bg-gray-700 rounded-3xl p-12 shadow-2xl space-y-6">
+                                    <div className="flex justify-between items-center pb-6 border-b border-gray-600">
+                                        <span className="text-gray-300 text-2xl">Pro Portfolio Fee</span>
+                                        <span className="text-white text-3xl font-bold">{formatCurrency(reportData.portfolioTotals.totalProFee)}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center pb-6 border-b border-gray-600">
+                                        <span className="text-gray-300 text-2xl">Additional Cost</span>
+                                        <span className="text-white text-3xl font-bold">
+                                            {formatCurrency(reportData.portfolioTotals.totalProFee - reportData.portfolioTotals.totalBasicWithAssistant)}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between items-center pt-6">
+                                        <span className="text-gray-300 text-2xl">Estimated Additional Savings</span>
+                                        <span className="text-green-400 text-4xl font-bold">
+                                            {formatCurrency(reportData.portfolioTotals.totalAdditionalSavingsIfPro)}
+                                        </span>
+                                    </div>
+                                </div>
+                                <p className="text-center text-xl text-gray-400 mt-12">
+                                    The bottom line: <span className="text-red-500 font-bold">Expert eyes on your buildings 24/7, delivering savings while you sleep.</span>
+                                </p>
+                            </div>
+                        </div>,
+                        
+                        // Event
+                        <div key="event" className="h-screen bg-gradient-to-br from-pink-500 via-red-500 to-yellow-500 flex items-center justify-center p-16">
+                            <div className="bg-gray-900 bg-opacity-90 rounded-3xl p-16 text-center max-w-4xl shadow-2xl">
+                                <h1 className="text-6xl font-bold text-pink-400 mb-4">BuildAI</h1>
+                                <p className="text-pink-300 text-2xl mb-12">the event for smarter buildings</p>
+                                <div className="text-white text-7xl font-bold mb-12">09.10.25</div>
+                                <p className="text-white text-xl mb-12">
+                                    Join us for a gathering of great people, great food,<br />
+                                    and great technologies shaping tomorrow's buildings.
+                                </p>
+                                <button className="bg-yellow-400 text-gray-900 px-8 py-4 rounded-full text-xl font-bold hover:bg-yellow-300 transition">
+                                    register now! buildai.entechsmart.com
+                                </button>
+                            </div>
+                        </div>
+                    ];
+                    
+                    const endPageStartIndex = reportData.buildings.length > 1 ? summaryPageIndex + 1 : buildingEndIndex;
+                    const endPageIndex = currentPage - endPageStartIndex;
+                    
+                    if (endPageIndex >= 0 && endPageIndex < endPages.length) {
+                        return endPages[endPageIndex];
+                    }
+                    
+                    if (currentPage < staticPages.length) {
+                        return staticPages[currentPage];
+                    }
+                    
+                    return null;
+                }, [currentPage, reportData]);
+                
+                const totalPages = useMemo(() => {
+                    if (!reportData) return 0;
+                    const staticStartPages = 5;
+                    const buildingPages = reportData.buildings.length;
+                    const summaryPage = reportData.buildings.length > 1 ? 1 : 0;
+                    const endPages = 3;
+                    return staticStartPages + buildingPages + summaryPage + endPages;
+                }, [reportData]);
+                
+                if (loading) {
+                    return <div className="flex items-center justify-center h-screen bg-gray-900 text-white">Loading management data...</div>;
+                }
+                
+                // Management Selection Screen
+                if (!showingReport) {
+                    const filteredManagements = allManagements.filter(m => 
+                        m.name.toLowerCase().includes(searchTerm.toLowerCase())
+                    );
+                    
+                    return (
+                        <div className="min-h-screen bg-gray-900 p-8">
+                            <div className="max-w-7xl mx-auto">
+                                <div className="text-center mb-12">
+                                    <div className="flex items-center justify-center mb-4">
+                                        <div className="text-red-500 text-6xl mr-4">⚡</div>
+                                        <h1 className="text-5xl font-bold text-white">entechAssistant</h1>
+                                    </div>
+                                    <p className="text-2xl text-gray-400">Report Generation System</p>
+                                    <div className="mt-4 space-x-4">
+                                        <button
+                                            onClick={() => setShowingLinks(!showingLinks)}
+                                            className="bg-red-500 text-white px-6 py-2 rounded hover:bg-red-600 transition"
+                                        >
+                                            {showingLinks ? 'Hide Links' : 'Show Individual Links'}
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div className="relative mb-8">
+                                    <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                                    <input
+                                        type="text"
+                                        placeholder="Search management companies..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        className="w-full pl-12 pr-4 py-4 bg-gray-800 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                                    />
+                                </div>
+                                
+                                <div className="grid grid-cols-3 gap-6 mb-8">
+                                    <div className="bg-gray-800 rounded-lg p-6 text-center">
+                                        <Users className="w-8 h-8 text-red-500 mx-auto mb-2" />
+                                        <div className="text-3xl font-bold text-white">{allManagements.length}</div>
+                                        <div className="text-gray-400">Management Companies</div>
+                                    </div>
+                                    <div className="bg-gray-800 rounded-lg p-6 text-center">
+                                        <Building className="w-8 h-8 text-red-500 mx-auto mb-2" />
+                                        <div className="text-3xl font-bold text-white">
+                                            {allManagements.reduce((sum, m) => sum + m.buildingCount, 0)}
+                                        </div>
+                                        <div className="text-gray-400">Total Buildings</div>
+                                    </div>
+                                    <div className="bg-gray-800 rounded-lg p-6 text-center">
+                                        <DollarSign className="w-8 h-8 text-red-500 mx-auto mb-2" />
+                                        <div className="text-3xl font-bold text-white">
+                                            {formatCurrency(allManagements.reduce((sum, m) => sum + m.totalSavings, 0))}
+                                        </div>
+                                        <div className="text-gray-400">Total Current Savings</div>
+                                    </div>
+                                </div>
+                                
+                                {showingLinks && (
+                                    <div className="bg-gray-800 rounded-lg p-6 mb-8">
+                                        <h3 className="text-xl font-bold text-white mb-4">Individual Management Links</h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto">
+                                            {filteredManagements.map((management, idx) => (
+                                                <div key={idx} className="bg-gray-700 rounded p-4">
+                                                    <div className="text-white font-semibold mb-2 truncate" title={management.name}>
+                                                        {management.name}
+                                                    </div>
+                                                    <div className="text-sm text-gray-400 mb-3">
+                                                        {management.buildingCount} buildings
+                                                    </div>
+                                                    <input
+                                                        type="text"
+                                                        value={generateManagementLink(management.name)}
+                                                        readOnly
+                                                        className="w-full bg-gray-600 text-white text-xs p-2 rounded mb-2"
+                                                        onClick={(e) => e.target.select()}
+                                                    />
+                                                    <button
+                                                        onClick={() => {
+                                                            navigator.clipboard.writeText(generateManagementLink(management.name));
+                                                            // Could add a toast notification here
+                                                        }}
+                                                        className="w-full bg-red-500 text-white py-1 px-2 rounded text-xs hover:bg-red-600 transition"
+                                                    >
+                                                        Copy Link
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {filteredManagements.map((management, idx) => (
+                                        <div
+                                            key={idx}
+                                            className="bg-gray-800 rounded-lg p-6 hover:bg-gray-700 transition cursor-pointer"
+                                            onClick={() => generateReport(management)}
+                                        >
+                                            <h3 className="text-xl font-bold text-white mb-2">{management.name}</h3>
+                                            <div className="space-y-2 text-sm">
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-400">Buildings:</span>
+                                                    <span className="text-white font-semibold">{management.buildingCount}</span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-400">Current Savings:</span>
+                                                    <span className="text-green-400 font-semibold">{formatCurrency(management.totalSavings)}</span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-400">Downtime:</span>
+                                                    <span className="text-red-400 font-semibold">{management.totalDowntime} days</span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-400">Lost Savings:</span>
+                                                    <span className="text-red-400 font-semibold">{formatCurrency(management.totalDowntimeCost)}</span>
+                                                </div>
+                                            </div>
+                                            <button className="mt-4 w-full bg-red-500 text-white py-2 rounded hover:bg-red-600 transition">
+                                                Generate Report →
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                                
+                                {filteredManagements.length === 0 && (
+                                    <div className="text-center text-gray-400 py-12">
+                                        No management companies found matching "{searchTerm}"
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    );
+                }
+                
+                // Report View
+                return (
+                    <div className="bg-gray-900 min-h-screen">
+                        <div className="fixed top-0 left-0 right-0 bg-gray-900 bg-opacity-95 z-50 p-4">
+                            <div className="max-w-6xl mx-auto flex justify-between items-center">
+                                <div className="flex items-center space-x-4">
+                                    <button
+                                        onClick={backToList}
+                                        className="text-white hover:text-red-500 transition flex items-center"
+                                    >
+                                        <ChevronLeft className="w-5 h-5 mr-1" />
+                                        Back to List
+                                    </button>
+                                    <span className="text-white">
+                                        {reportData.management} Report | Page {currentPage + 1} of {totalPages}
+                                    </span>
+                                </div>
+                                
+                                {reportData.buildings.length > 5 && (
+                                    <select 
+                                        onChange={(e) => setCurrentPage(parseInt(e.target.value))}
+                                        value={currentPage}
+                                        className="bg-gray-800 text-white px-3 py-1 rounded border border-gray-700 mr-4 text-sm max-w-xs"
+                                    >
+                                        <option value={0}>Cover</option>
+                                        <option value={1}>Problem Overview</option>
+                                        <option value={2}>Solution Overview</option>
+                                        <option value={3}>EntechAssistant</option>
+                                        <option value={4}>Services</option>
+                                        <optgroup label="Buildings">
+                                            {reportData.buildings.map((building, idx) => (
+                                                <option key={idx} value={5 + idx}>
+                                                    {building.Building} ({building.TotalDiscByp || 0} days offline)
+                                                </option>
+                                            ))}
+                                        </optgroup>
+                                        {reportData.buildings.length > 1 && (
+                                            <option value={5 + reportData.buildings.length}>Portfolio Summary</option>
+                                        )}
+                                        <option value={reportData.buildings.length > 1 ? 6 + reportData.buildings.length : 5 + reportData.buildings.length}>Entech Pro</option>
+                                        <option value={reportData.buildings.length > 1 ? 7 + reportData.buildings.length : 6 + reportData.buildings.length}>Investment</option>
+                                        <option value={reportData.buildings.length > 1 ? 8 + reportData.buildings.length : 7 + reportData.buildings.length}>Event</option>
+                                    </select>
+                                )}
+                                
+                                <div className="flex space-x-4">
+                                    <button
+                                        onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
+                                        disabled={currentPage === 0}
+                                        className="text-white hover:text-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                                    >
+                                        <ChevronLeft className="w-6 h-6" />
+                                    </button>
+                                    <button
+                                        onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
+                                        disabled={currentPage === totalPages - 1}
+                                        className="text-white hover:text-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                                    >
+                                        <ChevronRight className="w-6 h-6" />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div className="pt-16">
+                            {generateCurrentPage}
+                        </div>
+                        
+                        {totalPages <= 15 && (
+                            <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 flex space-x-2">
+                                {Array.from({ length: totalPages }, (_, idx) => (
+                                    <button
+                                        key={idx}
+                                        onClick={() => setCurrentPage(idx)}
+                                        className={`w-2 h-2 rounded-full transition ${
+                                            idx === currentPage ? 'bg-red-500 w-8' : 'bg-gray-600 hover:bg-gray-500'
+                                        }`}
+                                    />
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                );
+            };
+            
+            // Render the app
+            ReactDOM.render(<EntechReportSystem />, document.getElementById('root'));
+        }
+    </script>
+</body>
+</html>
