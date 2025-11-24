@@ -8,10 +8,43 @@
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- PDF Export Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; }
         #root { min-height: 100vh; }
         select { -webkit-appearance: none; appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 0.7rem center; background-size: 1.2em; padding-right: 2.5rem; }
+        
+        /* Enhanced animations and effects */
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .slide-up { animation: slideUp 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .gradient-text { background: linear-gradient(135deg, #ef4444, #f97316, #eab308); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        
+        .card-hover { transition: all 0.3s ease; }
+        .card-hover:hover { transform: translateY(-4px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
+        
+        .glass-effect { background: rgba(55, 65, 81, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(75, 85, 99, 0.3); }
+        
+        .toast { position: fixed; top: 20px; right: 20px; z-index: 9999; padding: 12px 24px; border-radius: 8px; font-weight: 500; animation: slideInRight 0.3s ease-out; }
+        @keyframes slideInRight { from { opacity: 0; transform: translateX(100%); } to { opacity: 1; transform: translateX(0); } }
+        
+        /* Print styles for PDF */
+        @media print { 
+            .no-print { display: none !important; }
+            .print-page { page-break-after: always; height: 100vh; }
+            .print-page:last-child { page-break-after: auto; }
+        }
+        
+        /* Better responsiveness */
+        @media (max-width: 768px) {
+            .mobile-stack { flex-direction: column; }
+            .mobile-full { width: 100%; }
+        }
     </style>
     <!-- Load the data file -->
     <script src="data.js"></script>
@@ -80,6 +113,36 @@
                 </svg>
             );
             
+            const Download = ({className = "w-6 h-6"}) => (
+                <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+            );
+            
+            const Mail = ({className = "w-6 h-6"}) => (
+                <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+            );
+            
+            const Copy = ({className = "w-6 h-6"}) => (
+                <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+            );
+            
+            const External = ({className = "w-6 h-6"}) => (
+                <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+            );
+            
+            const Check = ({className = "w-6 h-6"}) => (
+                <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+            );
+            
             // Utility functions
             const parseCurrency = (value) => {
                 if (!value || value === '$0.00') return 'n/a';
@@ -138,6 +201,175 @@
                 return url.toString();
             };
             
+            // Enhanced utility functions for new features
+            const showToast = (message, type = 'success') => {
+                const toast = document.createElement('div');
+                toast.className = `toast ${type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500'} text-white`;
+                toast.textContent = message;
+                document.body.appendChild(toast);
+                setTimeout(() => document.body.removeChild(toast), 3000);
+            };
+            
+            const generateBulkClientData = (managements) => {
+                return managements.map(management => ({
+                    name: management.name,
+                    buildingCount: management.buildingCount,
+                    totalSavings: formatCurrency(management.totalSavings),
+                    totalDowntime: management.totalDowntime,
+                    downtime_cost: formatCurrency(management.totalDowntimeCost),
+                    link: generateManagementLink(management.name),
+                    contact: `${management.name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()}@email.com` // Placeholder email
+                }));
+            };
+            
+            const downloadCSV = (data, filename) => {
+                const headers = ['Company Name', 'Buildings', 'Current Savings', 'Downtime Days', 'Lost Savings', 'Report Link', 'Contact Email'];
+                const csvContent = [
+                    headers.join(','),
+                    ...data.map(row => [
+                        `"${row.name}"`,
+                        row.buildingCount,
+                        `"${row.totalSavings}"`,
+                        row.totalDowntime,
+                        `"${row.downtime_cost}"`,
+                        `"${row.link}"`,
+                        `"${row.contact}"`
+                    ].join(','))
+                ].join('\n');
+                
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = filename;
+                link.click();
+                URL.revokeObjectURL(link.href);
+            };
+            
+            const generateEmailTemplate = (managements) => {
+                const emailData = managements.map(m => ({
+                    to: `${m.name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()}@email.com`,
+                    subject: `Your Energy Savings Report - ${m.name}`,
+                    body: `Dear ${m.name} team,
+
+We're pleased to share your personalized energy management report for your ${m.buildingCount} building${m.buildingCount > 1 ? 's' : ''}.
+
+Key Highlights:
+• Current Annual Savings: ${formatCurrency(m.totalSavings)}
+• System Downtime: ${m.totalDowntime} days
+• Potential Additional Savings: ${formatCurrency(m.totalDowntimeCost)}
+
+View your full interactive report: ${generateManagementLink(m.name)}
+
+Best regards,
+The Entech Team`
+                })).map(email => `TO: ${email.to}\nSUBJECT: ${email.subject}\n\n${email.body}`).join('\n\n---\n\n');
+                
+                const blob = new Blob([emailData], { type: 'text/plain' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = 'client_emails.txt';
+                link.click();
+                URL.revokeObjectURL(link.href);
+            };
+            
+            // PDF Export functionality
+            const exportToPDF = async (managementName, reportData, currentPage, totalPages) => {
+                showToast('Preparing PDF export...', 'info');
+                
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF({
+                    orientation: 'landscape',
+                    unit: 'mm',
+                    format: 'a4'
+                });
+                
+                const pageElement = document.querySelector('.pt-16 > div');
+                if (!pageElement) {
+                    showToast('Error: Report content not found', 'error');
+                    return;
+                }
+                
+                try {
+                    // Hide navigation elements
+                    const navElements = document.querySelectorAll('.no-print, .fixed');
+                    navElements.forEach(el => el.style.display = 'none');
+                    
+                    const canvas = await html2canvas(pageElement, {
+                        scale: 2,
+                        useCORS: true,
+                        allowTaint: true,
+                        backgroundColor: '#1f2937',
+                        width: pageElement.scrollWidth,
+                        height: pageElement.scrollHeight
+                    });
+                    
+                    const imgData = canvas.toDataURL('image/png');
+                    const imgWidth = 297; // A4 width in mm (landscape)
+                    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                    
+                    pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, Math.min(imgHeight, 210));
+                    
+                    // Restore navigation elements
+                    navElements.forEach(el => el.style.display = '');
+                    
+                    pdf.save(`${managementName.replace(/[^a-zA-Z0-9]/g, '_')}_Report.pdf`);
+                    showToast('PDF exported successfully!', 'success');
+                } catch (error) {
+                    console.error('PDF export error:', error);
+                    showToast('Error exporting PDF', 'error');
+                    
+                    // Restore navigation elements on error
+                    const navElements = document.querySelectorAll('.no-print, .fixed');
+                    navElements.forEach(el => el.style.display = '');
+                }
+            };
+            
+            const exportFullReportToPDF = async (managementName, reportData, setCurrentPage, totalPages) => {
+                showToast('Exporting full report to PDF...', 'info');
+                
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF({
+                    orientation: 'landscape',
+                    unit: 'mm',
+                    format: 'a4'
+                });
+                
+                try {
+                    for (let i = 0; i < totalPages; i++) {
+                        setCurrentPage(i);
+                        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for page to render
+                        
+                        const pageElement = document.querySelector('.pt-16 > div');
+                        if (pageElement) {
+                            const navElements = document.querySelectorAll('.no-print, .fixed');
+                            navElements.forEach(el => el.style.display = 'none');
+                            
+                            const canvas = await html2canvas(pageElement, {
+                                scale: 1.5,
+                                useCORS: true,
+                                allowTaint: true,
+                                backgroundColor: '#1f2937'
+                            });
+                            
+                            const imgData = canvas.toDataURL('image/png');
+                            const imgWidth = 297;
+                            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                            
+                            if (i > 0) pdf.addPage();
+                            pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, Math.min(imgHeight, 210));
+                            
+                            navElements.forEach(el => el.style.display = '');
+                        }
+                    }
+                    
+                    pdf.save(`${managementName.replace(/[^a-zA-Z0-9]/g, '_')}_Full_Report.pdf`);
+                    showToast('Full PDF report exported successfully!', 'success');
+                } catch (error) {
+                    console.error('Full PDF export error:', error);
+                    showToast('Error exporting full PDF', 'error');
+                }
+            };
+            
             // Debug function to test URL matching
             const testManagementMatch = (managementName) => {
                 const encoded = encodeURIComponent(managementName);
@@ -158,6 +390,9 @@
                 const [searchTerm, setSearchTerm] = useState('');
                 const [showingReport, setShowingReport] = useState(false);
                 const [showingLinks, setShowingLinks] = useState(false);
+                const [showingBulkTools, setShowingBulkTools] = useState(false);
+                const [selectedManagements, setSelectedManagements] = useState(new Set());
+                const [isExporting, setIsExporting] = useState(false);
                 
                 useEffect(() => {
                     loadManagements();
@@ -712,18 +947,47 @@
                     return (
                         <div className="min-h-screen bg-gray-900 p-8">
                             <div className="max-w-7xl mx-auto">
-                                <div className="text-center mb-12">
+                                <div className="text-center mb-12 fade-in">
                                     <div className="flex items-center justify-center mb-4">
                                         <div className="text-red-500 text-6xl mr-4">⚡</div>
-                                        <h1 className="text-5xl font-bold text-white">entechAssistant</h1>
+                                        <h1 className="text-5xl font-bold gradient-text">entechAssistant</h1>
                                     </div>
-                                    <p className="text-2xl text-gray-400">Report Generation System</p>
-                                    <div className="mt-4 space-x-4">
+                                    <p className="text-2xl text-gray-400 mb-6">Advanced Report Generation & Client Distribution System</p>
+                                    <div className="flex flex-wrap justify-center gap-4">
                                         <button
                                             onClick={() => setShowingLinks(!showingLinks)}
-                                            className="bg-red-500 text-white px-6 py-2 rounded hover:bg-red-600 transition"
+                                            className="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600 transition card-hover flex items-center gap-2"
                                         >
+                                            <External className="w-5 h-5" />
                                             {showingLinks ? 'Hide Links' : 'Show Individual Links'}
+                                        </button>
+                                        <button
+                                            onClick={() => setShowingBulkTools(!showingBulkTools)}
+                                            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition card-hover flex items-center gap-2"
+                                        >
+                                            <Download className="w-5 h-5" />
+                                            {showingBulkTools ? 'Hide' : 'Show'} Bulk Tools
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                const bulkData = generateBulkClientData(filteredManagements);
+                                                downloadCSV(bulkData, 'client_reports.csv');
+                                                showToast('Client list exported successfully!', 'success');
+                                            }}
+                                            className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition card-hover flex items-center gap-2"
+                                        >
+                                            <Copy className="w-5 h-5" />
+                                            Export CSV
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                generateEmailTemplate(filteredManagements);
+                                                showToast('Email templates generated!', 'success');
+                                            }}
+                                            className="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition card-hover flex items-center gap-2"
+                                        >
+                                            <Mail className="w-5 h-5" />
+                                            Generate Emails
                                         </button>
                                     </div>
                                 </div>
@@ -762,11 +1026,14 @@
                                 </div>
                                 
                                 {showingLinks && (
-                                    <div className="bg-gray-800 rounded-lg p-6 mb-8">
-                                        <h3 className="text-xl font-bold text-white mb-4">Individual Management Links</h3>
+                                    <div className="glass-effect rounded-xl p-6 mb-8 slide-up">
+                                        <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                                            <External className="w-6 h-6 text-red-400" />
+                                            Individual Management Links
+                                        </h3>
                                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto">
                                             {filteredManagements.map((management, idx) => (
-                                                <div key={idx} className="bg-gray-700 rounded p-4">
+                                                <div key={idx} className="bg-gray-700 rounded-lg p-4 card-hover">
                                                     <div className="text-white font-semibold mb-2 truncate" title={management.name}>
                                                         {management.name}
                                                     </div>
@@ -777,16 +1044,17 @@
                                                         type="text"
                                                         value={generateManagementLink(management.name)}
                                                         readOnly
-                                                        className="w-full bg-gray-600 text-white text-xs p-2 rounded mb-2"
+                                                        className="w-full bg-gray-600 text-white text-xs p-2 rounded mb-2 focus:ring-2 focus:ring-red-500"
                                                         onClick={(e) => e.target.select()}
                                                     />
                                                     <button
                                                         onClick={() => {
                                                             navigator.clipboard.writeText(generateManagementLink(management.name));
-                                                            // Could add a toast notification here
+                                                            showToast(`Link copied for ${management.name}`, 'success');
                                                         }}
-                                                        className="w-full bg-red-500 text-white py-1 px-2 rounded text-xs hover:bg-red-600 transition"
+                                                        className="w-full bg-red-500 text-white py-2 px-2 rounded text-xs hover:bg-red-600 transition flex items-center justify-center gap-1"
                                                     >
+                                                        <Copy className="w-3 h-3" />
                                                         Copy Link
                                                     </button>
                                                 </div>
@@ -795,35 +1063,156 @@
                                     </div>
                                 )}
                                 
+                                {showingBulkTools && (
+                                    <div className="glass-effect rounded-xl p-6 mb-8 slide-up">
+                                        <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                                            <Download className="w-6 h-6 text-blue-400" />
+                                            Bulk Client Management Tools
+                                        </h3>
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                                            <button
+                                                onClick={() => {
+                                                    if (selectedManagements.size === 0) {
+                                                        showToast('Please select some companies first', 'error');
+                                                        return;
+                                                    }
+                                                    const selectedData = allManagements.filter(m => selectedManagements.has(m.name));
+                                                    const bulkData = generateBulkClientData(selectedData);
+                                                    downloadCSV(bulkData, 'selected_clients.csv');
+                                                    showToast(`Exported ${selectedManagements.size} clients`, 'success');
+                                                }}
+                                                className="bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition flex items-center gap-2 justify-center card-hover"
+                                            >
+                                                <Copy className="w-4 h-4" />
+                                                Export Selected ({selectedManagements.size})
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    if (selectedManagements.size === 0) {
+                                                        showToast('Please select some companies first', 'error');
+                                                        return;
+                                                    }
+                                                    const selectedData = allManagements.filter(m => selectedManagements.has(m.name));
+                                                    generateEmailTemplate(selectedData);
+                                                    showToast(`Generated emails for ${selectedManagements.size} clients`, 'success');
+                                                }}
+                                                className="bg-purple-600 text-white px-4 py-3 rounded-lg hover:bg-purple-700 transition flex items-center gap-2 justify-center card-hover"
+                                            >
+                                                <Mail className="w-4 h-4" />
+                                                Email Templates
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    setSelectedManagements(new Set(allManagements.map(m => m.name)));
+                                                    showToast('All companies selected', 'success');
+                                                }}
+                                                className="bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition flex items-center gap-2 justify-center card-hover"
+                                            >
+                                                <Check className="w-4 h-4" />
+                                                Select All
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    setSelectedManagements(new Set());
+                                                    showToast('Selection cleared', 'success');
+                                                }}
+                                                className="bg-gray-600 text-white px-4 py-3 rounded-lg hover:bg-gray-700 transition flex items-center gap-2 justify-center card-hover"
+                                            >
+                                                <Copy className="w-4 h-4" />
+                                                Clear All
+                                            </button>
+                                        </div>
+                                        <div className="text-sm text-gray-400">
+                                            Select companies using the checkboxes, then use these tools to export data or generate email templates for client distribution.
+                                        </div>
+                                    </div>
+                                )}
+                                
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                     {filteredManagements.map((management, idx) => (
                                         <div
                                             key={idx}
-                                            className="bg-gray-800 rounded-lg p-6 hover:bg-gray-700 transition cursor-pointer"
-                                            onClick={() => generateReport(management)}
+                                            className="glass-effect rounded-xl p-6 card-hover slide-up relative"
+                                            style={{ animationDelay: `${idx * 100}ms` }}
                                         >
-                                            <h3 className="text-xl font-bold text-white mb-2">{management.name}</h3>
-                                            <div className="space-y-2 text-sm">
-                                                <div className="flex justify-between">
-                                                    <span className="text-gray-400">Buildings:</span>
-                                                    <span className="text-white font-semibold">{management.buildingCount}</span>
+                                            <div className="absolute top-4 right-4">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedManagements.has(management.name)}
+                                                    onChange={(e) => {
+                                                        const newSelected = new Set(selectedManagements);
+                                                        if (e.target.checked) {
+                                                            newSelected.add(management.name);
+                                                        } else {
+                                                            newSelected.delete(management.name);
+                                                        }
+                                                        setSelectedManagements(newSelected);
+                                                        e.stopPropagation();
+                                                    }}
+                                                    className="w-4 h-4 text-red-600 bg-gray-100 rounded focus:ring-red-500"
+                                                />
+                                            </div>
+                                            
+                                            <div className="cursor-pointer" onClick={() => generateReport(management)}>
+                                                <div className="flex items-center mb-4">
+                                                    <Building className="w-6 h-6 text-red-400 mr-2" />
+                                                    <h3 className="text-xl font-bold text-white truncate">{management.name}</h3>
                                                 </div>
-                                                <div className="flex justify-between">
-                                                    <span className="text-gray-400">Current Savings:</span>
-                                                    <span className="text-green-400 font-semibold">{formatCurrency(management.totalSavings)}</span>
-                                                </div>
-                                                <div className="flex justify-between">
-                                                    <span className="text-gray-400">Downtime:</span>
-                                                    <span className="text-red-400 font-semibold">{management.totalDowntime} days</span>
-                                                </div>
-                                                <div className="flex justify-between">
-                                                    <span className="text-gray-400">Lost Savings:</span>
-                                                    <span className="text-red-400 font-semibold">{formatCurrency(management.totalDowntimeCost)}</span>
+                                                
+                                                <div className="space-y-3 text-sm mb-4">
+                                                    <div className="flex justify-between items-center">
+                                                        <span className="text-gray-400">Buildings:</span>
+                                                        <span className="text-white font-semibold bg-gray-700 px-2 py-1 rounded-full text-xs">
+                                                            {management.buildingCount}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center">
+                                                        <span className="text-gray-400">Current Savings:</span>
+                                                        <span className="text-green-400 font-bold">{formatCurrency(management.totalSavings)}</span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center">
+                                                        <span className="text-gray-400">Downtime:</span>
+                                                        <span className="text-red-400 font-semibold">{management.totalDowntime} days</span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center">
+                                                        <span className="text-gray-400">Lost Savings:</span>
+                                                        <span className="text-red-400 font-bold">{formatCurrency(management.totalDowntimeCost)}</span>
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <button className="mt-4 w-full bg-red-500 text-white py-2 rounded hover:bg-red-600 transition">
-                                                Generate Report →
-                                            </button>
+                                            
+                                            <div className="space-y-2">
+                                                <button 
+                                                    onClick={() => generateReport(management)}
+                                                    className="w-full bg-gradient-to-r from-red-500 to-red-600 text-white py-3 rounded-lg hover:from-red-600 hover:to-red-700 transition flex items-center justify-center gap-2 font-semibold"
+                                                >
+                                                    <External className="w-4 h-4" />
+                                                    Generate Report
+                                                </button>
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            navigator.clipboard.writeText(generateManagementLink(management.name));
+                                                            showToast(`Link copied for ${management.name}`, 'success');
+                                                        }}
+                                                        className="flex-1 bg-gray-600 text-white py-2 px-3 rounded-lg hover:bg-gray-500 transition flex items-center justify-center gap-2 text-sm"
+                                                    >
+                                                        <Copy className="w-3 h-3" />
+                                                        Copy Link
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            window.open(generateManagementLink(management.name), '_blank');
+                                                        }}
+                                                        className="flex-1 bg-blue-600 text-white py-2 px-3 rounded-lg hover:bg-blue-500 transition flex items-center justify-center gap-2 text-sm"
+                                                    >
+                                                        <External className="w-3 h-3" />
+                                                        Open
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
@@ -841,19 +1230,52 @@
                 // Report View
                 return (
                     <div className="bg-gray-900 min-h-screen">
-                        <div className="fixed top-0 left-0 right-0 bg-gray-900 bg-opacity-95 z-50 p-4">
-                            <div className="max-w-6xl mx-auto flex justify-between items-center">
+                        <div className="fixed top-0 left-0 right-0 glass-effect z-50 p-4 no-print">
+                            <div className="max-w-7xl mx-auto flex justify-between items-center flex-wrap gap-4">
                                 <div className="flex items-center space-x-4">
                                     <button
                                         onClick={backToList}
-                                        className="text-white hover:text-red-500 transition flex items-center"
+                                        className="text-white hover:text-red-500 transition flex items-center card-hover px-3 py-2 rounded-lg"
                                     >
                                         <ChevronLeft className="w-5 h-5 mr-1" />
                                         Back to List
                                     </button>
-                                    <span className="text-white">
-                                        {reportData.management} Report | Page {currentPage + 1} of {totalPages}
+                                    <span className="text-white font-semibold">
+                                        {reportData.management} | Page {currentPage + 1} of {totalPages}
                                     </span>
+                                </div>
+                                
+                                <div className="flex items-center space-x-2">
+                                    <button
+                                        onClick={() => exportToPDF(reportData.management, reportData, currentPage, totalPages)}
+                                        disabled={isExporting}
+                                        className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition flex items-center gap-2 text-sm card-hover disabled:opacity-50"
+                                    >
+                                        <Download className="w-4 h-4" />
+                                        Export Page
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setIsExporting(true);
+                                            exportFullReportToPDF(reportData.management, reportData, setCurrentPage, totalPages)
+                                                .finally(() => setIsExporting(false));
+                                        }}
+                                        disabled={isExporting}
+                                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center gap-2 text-sm card-hover disabled:opacity-50"
+                                    >
+                                        <Download className="w-4 h-4" />
+                                        {isExporting ? 'Exporting...' : 'Export Full PDF'}
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(window.location.href);
+                                            showToast('Report link copied!', 'success');
+                                        }}
+                                        className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition flex items-center gap-2 text-sm card-hover"
+                                    >
+                                        <Copy className="w-4 h-4" />
+                                        Share
+                                    </button>
                                 </div>
                                 
                                 {reportData.buildings.length > 5 && (
