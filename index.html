@@ -25,10 +25,35 @@
         
         .gradient-text { background: linear-gradient(135deg, #ef4444, #f97316, #eab308); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
         
-        .card-hover { transition: all 0.3s ease; }
-        .card-hover:hover { transform: translateY(-4px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
+        .card-hover { 
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); 
+            position: relative;
+            overflow: hidden;
+        }
+        .card-hover:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: all 0.6s;
+        }
+        .card-hover:hover:before {
+            left: 100%;
+        }
+        .card-hover:hover { 
+            transform: translateY(-6px) scale(1.02); 
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1);
+        }
         
-        .glass-effect { background: rgba(55, 65, 81, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(75, 85, 99, 0.3); }
+        .glass-effect { 
+            background: linear-gradient(135deg, rgba(55, 65, 81, 0.9), rgba(75, 85, 99, 0.8)); 
+            backdrop-filter: blur(15px); 
+            border: 1px solid rgba(156, 163, 175, 0.2); 
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
         
         .toast { position: fixed; top: 20px; right: 20px; z-index: 9999; padding: 12px 24px; border-radius: 8px; font-weight: 500; animation: slideInRight 0.3s ease-out; }
         @keyframes slideInRight { from { opacity: 0; transform: translateX(100%); } to { opacity: 1; transform: translateX(0); } }
@@ -40,10 +65,51 @@
             .print-page:last-child { page-break-after: auto; }
         }
         
+        /* Beautiful background patterns */
+        .bg-pattern {
+            background-image: 
+                radial-gradient(circle at 25% 25%, rgba(239, 68, 68, 0.1) 0%, transparent 25%),
+                radial-gradient(circle at 75% 75%, rgba(59, 130, 246, 0.1) 0%, transparent 25%),
+                radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.1) 0%, transparent 25%);
+            background-size: 400px 400px, 300px 300px, 500px 500px;
+            background-position: 0% 0%, 100% 100%, 50% 50%;
+            animation: backgroundFloat 20s ease-in-out infinite;
+        }
+        
+        @keyframes backgroundFloat {
+            0%, 100% { background-position: 0% 0%, 100% 100%, 50% 50%; }
+            50% { background-position: 100% 50%, 0% 50%, 25% 75%; }
+        }
+        
+        .premium-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .data-badge {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(147, 51, 234, 0.2));
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            backdrop-filter: blur(8px);
+        }
+        
+        .metric-card {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(6, 182, 212, 0.1));
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            backdrop-filter: blur(10px);
+        }
+        
         /* Better responsiveness */
         @media (max-width: 768px) {
             .mobile-stack { flex-direction: column; }
             .mobile-full { width: 100%; }
+            .bg-pattern { background-size: 200px 200px, 150px 150px, 250px 250px; }
         }
     </style>
     <!-- Load the data file -->
@@ -295,12 +361,15 @@ The Entech Team`
                     navElements.forEach(el => el.style.display = 'none');
                     
                     const canvas = await html2canvas(pageElement, {
-                        scale: 2,
+                        scale: 3,
                         useCORS: true,
                         allowTaint: true,
                         backgroundColor: '#1f2937',
                         width: pageElement.scrollWidth,
-                        height: pageElement.scrollHeight
+                        height: pageElement.scrollHeight,
+                        logging: false,
+                        letterRendering: true,
+                        foreignObjectRendering: true
                     });
                     
                     const imgData = canvas.toDataURL('image/png');
@@ -345,10 +414,13 @@ The Entech Team`
                             navElements.forEach(el => el.style.display = 'none');
                             
                             const canvas = await html2canvas(pageElement, {
-                                scale: 1.5,
+                                scale: 2.5,
                                 useCORS: true,
                                 allowTaint: true,
-                                backgroundColor: '#1f2937'
+                                backgroundColor: '#1f2937',
+                                logging: false,
+                                letterRendering: true,
+                                foreignObjectRendering: true
                             });
                             
                             const imgData = canvas.toDataURL('image/png');
@@ -393,6 +465,7 @@ The Entech Team`
                 const [showingBulkTools, setShowingBulkTools] = useState(false);
                 const [selectedManagements, setSelectedManagements] = useState(new Set());
                 const [isExporting, setIsExporting] = useState(false);
+                const [isClientMode, setIsClientMode] = useState(false);
                 
                 useEffect(() => {
                     loadManagements();
@@ -423,6 +496,7 @@ The Entech Team`
                             m.name.toLowerCase().trim() === managementFromURL.toLowerCase().trim()
                         );
                         if (management) {
+                            setIsClientMode(true); // Enable client mode for direct links
                             generateReport(management);
                         } else {
                             console.log('Management not found:', managementFromURL);
@@ -894,21 +968,6 @@ The Entech Team`
                             </div>
                         </div>,
                         
-                        // Event
-                        <div key="event" className="h-screen bg-gradient-to-br from-pink-500 via-red-500 to-yellow-500 flex items-center justify-center p-16">
-                            <div className="bg-gray-900 bg-opacity-90 rounded-3xl p-16 text-center max-w-4xl shadow-2xl">
-                                <h1 className="text-6xl font-bold text-pink-400 mb-4">BuildAI</h1>
-                                <p className="text-pink-300 text-2xl mb-12">the event for smarter buildings</p>
-                                <div className="text-white text-7xl font-bold mb-12">09.10.25</div>
-                                <p className="text-white text-xl mb-12">
-                                    Join us for a gathering of great people, great food,<br />
-                                    and great technologies shaping tomorrow's buildings.
-                                </p>
-                                <button className="bg-yellow-400 text-gray-900 px-8 py-4 rounded-full text-xl font-bold hover:bg-yellow-300 transition">
-                                    register now! buildai.entechsmart.com
-                                </button>
-                            </div>
-                        </div>
                     ];
                     
                     const endPageStartIndex = reportData.buildings.length > 1 ? summaryPageIndex + 1 : buildingEndIndex;
@@ -930,7 +989,7 @@ The Entech Team`
                     const staticStartPages = 5;
                     const buildingPages = reportData.buildings.length;
                     const summaryPage = reportData.buildings.length > 1 ? 1 : 0;
-                    const endPages = 3;
+                    const endPages = 2;
                     return staticStartPages + buildingPages + summaryPage + endPages;
                 }, [reportData]);
                 
@@ -945,7 +1004,7 @@ The Entech Team`
                     );
                     
                     return (
-                        <div className="min-h-screen bg-gray-900 p-8">
+                        <div className="min-h-screen bg-gray-900 bg-pattern p-8">
                             <div className="max-w-7xl mx-auto">
                                 <div className="text-center mb-12 fade-in">
                                     <div className="flex items-center justify-center mb-4">
@@ -983,24 +1042,30 @@ The Entech Team`
                                 </div>
                                 
                                 <div className="grid grid-cols-3 gap-6 mb-8">
-                                    <div className="bg-gray-800 rounded-lg p-6 text-center">
-                                        <Users className="w-8 h-8 text-red-500 mx-auto mb-2" />
-                                        <div className="text-3xl font-bold text-white">{allManagements.length}</div>
-                                        <div className="text-gray-400">Management Companies</div>
+                                    <div className="metric-card rounded-xl p-6 text-center card-hover slide-up">
+                                        <div className="premium-gradient p-3 rounded-full inline-block mb-4">
+                                            <Users className="w-8 h-8 text-white" />
+                                        </div>
+                                        <div className="text-3xl font-bold text-white mb-2">{allManagements.length}</div>
+                                        <div className="text-gray-300 font-medium">Management Companies</div>
                                     </div>
-                                    <div className="bg-gray-800 rounded-lg p-6 text-center">
-                                        <Building className="w-8 h-8 text-red-500 mx-auto mb-2" />
-                                        <div className="text-3xl font-bold text-white">
+                                    <div className="metric-card rounded-xl p-6 text-center card-hover slide-up" style={{ animationDelay: '100ms' }}>
+                                        <div className="premium-gradient p-3 rounded-full inline-block mb-4">
+                                            <Building className="w-8 h-8 text-white" />
+                                        </div>
+                                        <div className="text-3xl font-bold text-white mb-2">
                                             {allManagements.reduce((sum, m) => sum + m.buildingCount, 0)}
                                         </div>
-                                        <div className="text-gray-400">Total Buildings</div>
+                                        <div className="text-gray-300 font-medium">Total Buildings</div>
                                     </div>
-                                    <div className="bg-gray-800 rounded-lg p-6 text-center">
-                                        <DollarSign className="w-8 h-8 text-red-500 mx-auto mb-2" />
-                                        <div className="text-3xl font-bold text-white">
+                                    <div className="metric-card rounded-xl p-6 text-center card-hover slide-up" style={{ animationDelay: '200ms' }}>
+                                        <div className="premium-gradient p-3 rounded-full inline-block mb-4">
+                                            <DollarSign className="w-8 h-8 text-white" />
+                                        </div>
+                                        <div className="text-3xl font-bold text-green-400 mb-2">
                                             {formatCurrency(allManagements.reduce((sum, m) => sum + m.totalSavings, 0))}
                                         </div>
-                                        <div className="text-gray-400">Total Current Savings</div>
+                                        <div className="text-gray-300 font-medium">Total Current Savings</div>
                                     </div>
                                 </div>
                                 
@@ -1108,22 +1173,22 @@ The Entech Team`
                                                 </div>
                                                 
                                                 <div className="space-y-3 text-sm mb-4">
-                                                    <div className="flex justify-between items-center">
-                                                        <span className="text-gray-400">Buildings:</span>
-                                                        <span className="text-white font-semibold bg-gray-700 px-2 py-1 rounded-full text-xs">
+                                                    <div className="flex justify-between items-center p-2 bg-gray-800 bg-opacity-50 rounded-lg">
+                                                        <span className="text-gray-300 font-medium">Buildings:</span>
+                                                        <span className="data-badge px-3 py-1 rounded-full text-xs font-bold text-white">
                                                             {management.buildingCount}
                                                         </span>
                                                     </div>
-                                                    <div className="flex justify-between items-center">
-                                                        <span className="text-gray-400">Current Savings:</span>
-                                                        <span className="text-green-400 font-bold">{formatCurrency(management.totalSavings)}</span>
+                                                    <div className="flex justify-between items-center p-2 bg-gray-800 bg-opacity-50 rounded-lg">
+                                                        <span className="text-gray-300 font-medium">Current Savings:</span>
+                                                        <span className="text-green-400 font-bold text-lg">{formatCurrency(management.totalSavings)}</span>
                                                     </div>
-                                                    <div className="flex justify-between items-center">
-                                                        <span className="text-gray-400">Downtime:</span>
-                                                        <span className="text-red-400 font-semibold">{management.totalDowntime} days</span>
+                                                    <div className="flex justify-between items-center p-2 bg-gray-800 bg-opacity-50 rounded-lg">
+                                                        <span className="text-gray-300 font-medium">Downtime:</span>
+                                                        <span className="text-orange-400 font-semibold">{management.totalDowntime} days</span>
                                                     </div>
-                                                    <div className="flex justify-between items-center">
-                                                        <span className="text-gray-400">Lost Savings:</span>
+                                                    <div className="flex justify-between items-center p-2 bg-gray-800 bg-opacity-50 rounded-lg">
+                                                        <span className="text-gray-300 font-medium">Lost Savings:</span>
                                                         <span className="text-red-400 font-bold">{formatCurrency(management.totalDowntimeCost)}</span>
                                                     </div>
                                                 </div>
@@ -1181,13 +1246,15 @@ The Entech Team`
                         <div className="fixed top-0 left-0 right-0 glass-effect z-50 p-4 no-print">
                             <div className="max-w-7xl mx-auto flex justify-between items-center flex-wrap gap-4">
                                 <div className="flex items-center space-x-4">
-                                    <button
-                                        onClick={backToList}
-                                        className="text-white hover:text-red-500 transition flex items-center card-hover px-3 py-2 rounded-lg"
-                                    >
-                                        <ChevronLeft className="w-5 h-5 mr-1" />
-                                        Back to List
-                                    </button>
+                                    {!isClientMode && (
+                                        <button
+                                            onClick={backToList}
+                                            className="text-white hover:text-red-500 transition flex items-center card-hover px-3 py-2 rounded-lg"
+                                        >
+                                            <ChevronLeft className="w-5 h-5 mr-1" />
+                                            Back to List
+                                        </button>
+                                    )}
                                     <span className="text-white font-semibold">
                                         {reportData.management} | Page {currentPage + 1} of {totalPages}
                                     </span>
