@@ -16,18 +16,23 @@
         #root { min-height: 100vh; }
         select { -webkit-appearance: none; appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 0.7rem center; background-size: 1.2em; padding-right: 2.5rem; }
         
-        /* Clean, minimal effects */
+        /* Professional, clean styling optimized for PDF */
         .fade-in { opacity: 1; }
         .slide-up { opacity: 1; }
         
-        .gradient-text { background: linear-gradient(135deg, #ef4444, #f97316, #eab308); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .gradient-text { 
+            background: linear-gradient(135deg, #dc2626, #991b1b); 
+            -webkit-background-clip: text; 
+            -webkit-text-fill-color: transparent; 
+            background-clip: text; 
+        }
         
         .card-hover { 
             transition: all 0.2s ease;
         }
         .card-hover:hover { 
             transform: translateY(-2px); 
-            box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
         }
         
         .glass-effect { 
@@ -36,51 +41,98 @@
             border-radius: 12px;
         }
         
-        .toast { position: fixed; top: 20px; right: 20px; z-index: 9999; padding: 12px 24px; border-radius: 8px; font-weight: 500; animation: slideInRight 0.3s ease-out; }
-        @keyframes slideInRight { from { opacity: 0; transform: translateX(100%); } to { opacity: 1; transform: translateX(0); } }
+        .toast { 
+            position: fixed; 
+            top: 20px; 
+            right: 20px; 
+            z-index: 9999; 
+            padding: 12px 24px; 
+            border-radius: 8px; 
+            font-weight: 500; 
+            animation: slideInRight 0.3s ease-out; 
+        }
+        @keyframes slideInRight { 
+            from { opacity: 0; transform: translateX(100%); } 
+            to { opacity: 1; transform: translateX(0); } 
+        }
         
-        /* Print styles for PDF */
+        /* Optimized print/PDF styles */
         @media print { 
+            * { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; }
             .no-print { display: none !important; }
-            .print-page { page-break-after: always; height: 100vh; }
+            .print-page { 
+                page-break-after: always; 
+                min-height: 100vh; 
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 20px !important;
+                background: white !important;
+            }
             .print-page:last-child { page-break-after: auto; }
+            body { background: white !important; }
         }
         
-        /* Clean, professional styling */
-        .clean-gradient {
-            background: linear-gradient(135deg, #dc2626, #ea580c);
+        /* Professional report styling */
+        .report-page {
+            background: white;
+            min-height: 100vh;
+            padding: 40px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.5;
         }
         
-        .data-badge {
-            background: rgba(59, 130, 246, 0.15);
-            border: 1px solid rgba(59, 130, 246, 0.3);
+        .page-header {
+            border-bottom: 3px solid #dc2626;
+            padding-bottom: 20px;
+            margin-bottom: 40px;
         }
         
-        .metric-card {
-            background: rgba(31, 41, 55, 0.8);
-            border: 1px solid rgba(75, 85, 99, 0.3);
+        .metric-box {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         }
         
-        /* Sales-focused styling */
-        .savings-highlight {
-            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.2));
-            border-left: 4px solid #10b981;
+        .problem-box {
+            background: #fef2f2;
+            border: 2px solid #fca5a5;
+            border-left: 6px solid #dc2626;
+            border-radius: 8px;
+            padding: 24px;
+            margin: 20px 0;
         }
         
-        .loss-highlight {
-            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.2));
-            border-left: 4px solid #ef4444;
+        .solution-box {
+            background: #f0fdf4;
+            border: 2px solid #86efac;
+            border-left: 6px solid #16a34a;
+            border-radius: 8px;
+            padding: 24px;
+            margin: 20px 0;
         }
         
-        .upgrade-cta {
-            background: linear-gradient(135deg, #dc2626, #b91c1c);
-            box-shadow: 0 4px 14px 0 rgba(220, 38, 38, 0.3);
+        .highlight-number {
+            font-size: 2.5rem;
+            font-weight: 800;
+            line-height: 1;
         }
         
-        /* Better responsiveness */
+        .section-divider {
+            height: 2px;
+            background: linear-gradient(to right, #dc2626, #fca5a5, #dc2626);
+            margin: 40px 0;
+            border-radius: 2px;
+        }
+        
+        /* Better mobile responsive */
         @media (max-width: 768px) {
             .mobile-stack { flex-direction: column; }
             .mobile-full { width: 100%; }
+            .report-page { padding: 20px; }
+            .highlight-number { font-size: 2rem; }
         }
     </style>
     <!-- Load the data file -->
@@ -332,10 +384,10 @@ The Entech Team`
                     navElements.forEach(el => el.style.display = 'none');
                     
                     const canvas = await html2canvas(pageElement, {
-                        scale: 3,
+                        scale: 2,
                         useCORS: true,
                         allowTaint: true,
-                        backgroundColor: '#1f2937',
+                        backgroundColor: '#ffffff',
                         width: pageElement.scrollWidth,
                         height: pageElement.scrollHeight,
                         logging: false,
@@ -385,10 +437,10 @@ The Entech Team`
                             navElements.forEach(el => el.style.display = 'none');
                             
                             const canvas = await html2canvas(pageElement, {
-                                scale: 2.5,
+                                scale: 1.5,
                                 useCORS: true,
                                 allowTaint: true,
-                                backgroundColor: '#1f2937',
+                                backgroundColor: '#ffffff',
                                 logging: false,
                                 letterRendering: true,
                                 foreignObjectRendering: true
